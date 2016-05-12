@@ -1,0 +1,48 @@
+# Example docker-compose configuration for Sentry
+redis:
+  image: redis
+
+postgres:
+  image: postgres
+  environment:
+    POSTGRES_PASSWORD: secret
+    POSTGRES_USER: sentry
+
+# NÃO RODA O CONTAINER ABAIXO NO PRIMEIRO UP
+# É NECESSÁRIO RODAR O UPGRADE PRIMEIRO
+web: &web
+  image: sentry
+  links:
+    - postgres
+    - redis
+  ports:
+    - "0.0.0.0:9000:9000"
+  command: start
+  environment:
+    SENTRY_SECRET_KEY: 5i*8uzah)@6fk_3-ig0$&@nydsphoh1k*6#0t&o%yex8h0&oyp
+
+beat:
+  image: sentry
+  links:
+    - postgres
+    - redis
+  environment:
+    SENTRY_SECRET_KEY: 5i*8uzah)@6fk_3-ig0$&@nydsphoh1k*6#0t&o%yex8h0&oyp
+  command: celery beat
+
+worker:
+  image: sentry
+  links:
+    - postgres
+    - redis
+  environment:
+    SENTRY_SECRET_KEY: 5i*8uzah)@6fk_3-ig0$&@nydsphoh1k*6#0t&o%yex8h0&oyp
+  command: celery worker
+
+#Para rodar os comandos abaixo é necessário verificar se o link está de acordo com o up do composer
+
+#Upgrade inicial
+#docker run -it --rm -e SENTRY_SECRET_KEY='5i*8uzah)@6fk_3-ig0$&@nydsphoh1k*6#0t&o%yex8h0&oyp' --link sentrydefault_postgres_1:postgres --link sentrydefault_redis_1:redis sentry upgrade
+
+#Criar usuário se não for criado no upgrade
+#docker run -it --rm -e SENTRY_SECRET_KEY='5i*8uzah)@6fk_3-ig0$&@nydsphoh1k*6#0t&o%yex8h0&oyp' --link sentrydefault_postgres_1:postgres --link sentrydefault_redis_1:redis sentry createuser
